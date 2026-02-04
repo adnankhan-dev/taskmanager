@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block content %}
+<h4>Create Task</h4>
+
+<form method="post">
+  <div class="mb-2">
+    <label>Title</label>
+    <input class="form-control" name="title" required>
+  </div>
+<div class="mb-2">
+  <label>Task Type</label>
+  <select class="form-select" name="type_id" required>
+    {% for t in task_types %}
+      <option value="{{ t.id }}">{{ t.name }}</option>
+    {% endfor %}
+  </select>
+</div>
+
+<div class="mb-2">
+  <label>Priority</label>
+  <select class="form-select" name="priority">
+    <option>Low</option>
+    <option selected>Normal</option>
+    <option>High</option>
+  </select>
+</div>
+<div class="mb-2">
+  <label>Assign To</label>
+  <select class="form-select" name="assigned_to_id">
+    <option value="">-- Select --</option>
+    {% for u in assignable_users %}
+      <option value="{{ u.id }}">
+        {{ u.full_name or u.username }} ({{ u.role }})
+      </option>
+    {% endfor %}
+  </select>
+</div>
+
+
+  <div class="mb-2">
+    <label>Final Deadline</label>
+    <input type="date" class="form-control" name="final_deadline" required>
+  </div>
+<div class="mb-2">
+  <label>Task Folder (Path or URL)</label>
+  <input name="folder_link" class="form-control"
+         placeholder="\\SERVER\\Dept\\Tasks\\Task-001 or https://drive.google.com/...">
+  <small class="text-muted">
+    You may enter a local/network path or a web link.
+  </small>
+</div>
+
+  <div class="mb-2">
+    <label>Description</label>
+    <textarea class="form-control" name="description"></textarea>
+  </div>
+<hr>
+<h6>Milestones (Optional)</h6>
+
+<div id="milestones">
+  <div class="row mb-2 milestone-row">
+    <div class="col-md-6">
+      <input name="milestone_title" class="form-control"
+             placeholder="Milestone title">
+    </div>
+    <div class="col-md-4">
+      <input name="milestone_deadline" type="date" class="form-control">
+    </div>
+    <div class="col-md-2">
+      <button type="button" class="btn btn-danger btn-sm"
+              onclick="this.parentElement.parentElement.remove()">
+        ✕
+      </button>
+    </div>
+  </div>
+</div>
+
+<button type="button" class="btn btn-outline-secondary btn-sm mb-3"
+        onclick="addMilestone()">
+  + Add Milestone
+</button>
+
+<script>
+function addMilestone() {
+  const container = document.getElementById("milestones");
+  const row = document.querySelector(".milestone-row").cloneNode(true);
+  row.querySelectorAll("input").forEach(i => i.value = "");
+  container.appendChild(row);
+}
+</script>
+
+  <button class="btn btn-success">Create</button>
+</form>
+{% endblock %}

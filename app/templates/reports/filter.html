@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h4>Task Reports</h4>
+
+<form method="get" action="/ui/reports/tasks/excel" class="row g-3 mb-4">
+
+  <div class="col-md-3">
+    <label class="form-label">From Date</label>
+    <input type="date" name="from_date" class="form-control">
+  </div>
+
+  <div class="col-md-3">
+    <label class="form-label">To Date</label>
+    <input type="date" name="to_date" class="form-control">
+  </div>
+
+  <div class="col-md-3">
+    <label class="form-label">Status</label>
+    <select name="status" class="form-select">
+      <option value="">All</option>
+      <option>To Do</option>
+      <option>In Progress</option>
+      <option>Completed</option>
+    </select>
+  </div>
+
+  <div class="col-md-3 d-flex align-items-end">
+    <button class="btn btn-success w-100">
+      Export Excel
+    </button>
+  </div>
+
+</form>
+
+<form method="get" action="/ui/reports/tasks/pdf" class="row g-3">
+
+  <input type="hidden" name="from_date" value="{{ request.query_params.get('from_date','') }}">
+  <input type="hidden" name="to_date" value="{{ request.query_params.get('to_date','') }}">
+  <input type="hidden" name="status" value="{{ request.query_params.get('status','') }}">
+
+  <div class="col-md-3 d-flex align-items-end">
+    <button class="btn btn-danger w-100">
+      Export PDF
+    </button>
+  </div>
+
+</form>
+{% endblock %}

@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, priority_badge %}
+
+{% block content %}
+
+<div class="d-flex align-items-center gap-3 mb-4">
+  <img src="{{ url_for('static', path='img/uw-logo.svg') }}"
+       alt="UW Logo"
+       width="44"
+       height="44"
+       class="rounded bg-light p-1">
+  <div>
+    <h4 class="mb-0">Reports</h4>
+    <small class="text-muted">Directorate of Academics, Advanced Studies and Research</small>
+  </div>
+</div>
+
+<!-- ================= FILTERS ================= -->
+<form method="get" class="card shadow-sm p-3 mb-4">
+  <div class="row g-2 align-items-end">
+
+    <!-- STATUS -->
+    <div class="col-md-2">
+      <label class="small">Status</label>
+      <select name="status" class="form-select form-select-sm">
+        <option value="">All</option>
+        {% for s in ["To Do", "In Progress", "Submitted for Review", "Approved", "Completed"] %}
+          <option value="{{ s }}" {% if filters.status == s %}selected{% endif %}>
+            {{ s }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- PRIORITY -->
+    <div class="col-md-2">
+      <label class="small">Priority</label>
+      <select name="priority" class="form-select form-select-sm">
+        <option value="">All</option>
+        {% for p in ["Low", "Normal", "High"] %}
+          <option value="{{ p }}" {% if filters.priority == p %}selected{% endif %}>
+            {{ p }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- TASK TYPE -->
+    <div class="col-md-2">
+      <label class="small">Task Type</label>
+      <select name="type_id" class="form-select form-select-sm">
+        <option value="">All</option>
+        {% for t in request.state.task_types %}
+          <option value="{{ t.id }}" {% if filters.type_id == t.id %}selected{% endif %}>
+            {{ t.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- ASSIGNED TO -->
+    <div class="col-md-2">
+      <label class="small">Assigned To</label>
+      <select name="assigned_to_id" class="form-select form-select-sm">
+        <option value="">All</option>
+        {% for u in request.state.users %}
+          <option value="{{ u.id }}" {% if filters.assigned_to_id == u.id %}selected{% endif %}>
+            {{ u.username }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- DATE RANGE -->
+    <div class="col-md-2">
+      <label class="small">From</label>
+      <input type="date" name="from_date"
+             value="{{ filters.from_date }}"
+             class="form-control form-control-sm">
+    </div>
+
+    <div class="col-md-2">
+      <label class="small">To</label>
+      <input type="date" name="to_date"
+             value="{{ filters.to_date }}"
+             class="form-control form-control-sm">
+    </div>
+
+    <div class="col-md-12">
+      <label class="small d-block mb-1">Export Columns</label>
+      <div class="d-flex flex-wrap gap-3">
+        {% set cols = filters.columns %}
+        {% for key, label in [
+          ("id", "ID"),
+          ("title", "Title"),
+          ("status", "Status"),
+          ("priority", "Priority"),
+          ("assigned_to", "Assigned To"),
+          ("deadline", "Deadline"),
+          ("folder", "Folder"),
+          ("milestone", "Milestone"),
+          ("milestone_status", "Milestone Status"),
+          ("milestone_deadline", "Milestone Deadline")
+        ] %}
+          <div class="form-check form-check-inline">
+            <input class="form-check-input"
+                   type="checkbox"
+                   name="columns"
+                   value="{{ key }}"
+                   {% if key in cols %}checked{% endif %}>
+            <label class="form-check-label small">{{ label }}</label>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="col-md-12 text-end mt-2">
+      <button class="btn btn-sm btn-primary">Apply Filters</button>
+      <button class="btn btn-sm btn-outline-success" formaction="/ui/reports/tasks/excel">
+        Export Excel
+      </button>
+      <button class="btn btn-sm btn-outline-danger" formaction="/ui/reports/tasks/pdf">
+        Export PDF
+      </button>
+      <a href="/ui/reports" class="btn btn-sm btn-outline-secondary">
+        Reset
+      </a>
+    </div>
+
+  </div>
+</form>
+<!-- Export buttons moved into filter form to include selected columns -->
+
+<!-- ================= TASK TABLE ================= -->
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-sm table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Title</th>
+          <th>Type</th>
+          <th>Status</th>
+          <th>Priority</th>
+          <th>Assigned To</th>
+          <th>Deadline</th>
+          <th>Folder</th>
+        </tr>
+      </thead>
+      <tbody>
+    {% for task in tasks %}
+    <tr>
+      <td>
+        <a href="{{ task.url or ('/ui/tasks/' ~ task.id) }}">
+          {{ task.title }}
+        </a>
+      </td>
+      <td>{{ task.type.name if task.type else "-" }}</td>
+      <td>{{ status_badge(task.status) }}</td>
+      <td>{{ priority_badge(task.priority) }}</td>
+      <td>{{ task.assigned_to.username if task.assigned_to else "-" }}</td>
+      <td>{{ task.final_deadline }}</td>
+      <td>
+        {% if task.folder_link %}
+          {% if task.folder_link.startswith("http") %}
+            <a href="{{ task.folder_link }}" target="_blank">Open</a>
+          {% else %}
+            {% set file_path = task.folder_link.replace('\\\\', '/') %}
+            <a href="file:///{{ file_path }}" target="_blank">
+              {{ task.folder_link }}
+            </a>
+          {% endif %}
+        {% else %}
+          -
+        {% endif %}
+      </td>
+    </tr>
+    {% if task.milestones %}
+    <tr>
+      <td colspan="7" class="bg-light">
+        <div class="small text-muted mb-1">Milestones</div>
+        <div class="d-flex flex-wrap gap-2">
+          {% for m in task.milestones %}
+            <span class="badge bg-white text-dark border">
+              {{ m.title }} ({{ m.status }}) - {{ m.deadline }}
+            </span>
+          {% endfor %}
+        </div>
+      </td>
+    </tr>
+    {% endif %}
+    {% else %}
+        <tr>
+          <td colspan="6" class="text-center text-muted">
+            No tasks found
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+<!-- ================= PAGINATION ================= -->
+{% if total_pages > 1 %}
+<nav class="mt-3">
+  <ul class="pagination pagination-sm justify-content-center">
+
+    <!-- PREVIOUS -->
+    <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+      <a class="page-link"
+         href="?page={{ page - 1 }}&{{ request.query_params|urlencode }}">
+        Previous
+      </a>
+    </li>
+
+    <!-- PAGE NUMBERS -->
+    {% for p in range(1, total_pages + 1) %}
+      <li class="page-item {% if p == page %}active{% endif %}">
+        <a class="page-link"
+           href="?page={{ p }}&{{ request.query_params|urlencode }}">
+          {{ p }}
+        </a>
+      </li>
+    {% endfor %}
+
+    <!-- NEXT -->
+    <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+      <a class="page-link"
+         href="?page={{ page + 1 }}&{{ request.query_params|urlencode }}">
+        Next
+      </a>
+    </li>
+
+  </ul>
+</nav>
+{% endif %}
+
+{% endblock %}

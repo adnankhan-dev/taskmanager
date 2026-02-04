@@ -1,0 +1,29 @@
+{% macro status_badge(status) %}
+  {% if status == "Completed" %}
+    <span class="badge bg-success">Completed</span>
+  {% elif status == "In Progress" %}
+    <span class="badge bg-warning text-dark">In Progress</span>
+  {% elif status == "Submitted for Review" %}
+    <span class="badge bg-info text-dark">Submitted</span>
+  {% elif status == "Approved" %}
+    <span class="badge bg-primary">Approved</span>
+  {% elif status == "Returned" %}
+    <span class="badge bg-danger">Returned</span>
+  {% elif status == "To Do" %}
+    <span class="badge bg-secondary">To Do</span>
+  {% else %}
+    <span class="badge bg-secondary">Pending</span>
+  {% endif %}
+{% endmacro %}
+
+{% macro priority_badge(priority) %}
+  {% if priority == "High" %}
+    <span class="badge bg-danger">High</span>
+  {% elif priority in ["Normal", "Medium"] %}
+    <span class="badge bg-warning text-dark">Normal</span>
+  {% elif priority == "Low" %}
+    <span class="badge bg-info text-dark">Low</span>
+  {% else %}
+    <span class="badge bg-light text-dark">—</span>
+  {% endif %}
+{% endmacro %}

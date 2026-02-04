@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<h4>Create User</h4>
+
+<form method="post" class="card p-3 bg-white">
+
+  <div class="mb-2">
+    <label>Username</label>
+    <input name="username" class="form-control" required>
+  </div>
+
+  <div class="mb-2">
+    <label>Password</label>
+    <input name="password" type="password" class="form-control" required>
+  </div>
+
+  <div class="mb-2">
+    <label>Role</label>
+    <input name="role" class="form-control" placeholder="Director / AD / Officer">
+  </div>
+
+  <div class="mb-2">
+    <label>Department</label>
+    <input name="department" class="form-control">
+  </div>
+
+  <div class="mb-2">
+    <label>Manager (Reports To)</label>
+    <select name="manager_id" class="form-select">
+      <option value="">-- None --</option>
+      {% for m in managers %}
+      <option value="{{ m.id }}">{{ m.username }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="mb-3">
+    <label>Privileges</label>
+    {% if privileges %}
+      {% for p in privileges %}
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox"
+               name="privilege_ids" value="{{ p.id }}">
+        <label class="form-check-label">{{ p.code }}</label>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p class="small text-muted mb-0">No privileges available.</p>
+    {% endif %}
+  </div>
+
+  <button class="btn btn-primary">Create User</button>
+</form>
+{% endblock %}

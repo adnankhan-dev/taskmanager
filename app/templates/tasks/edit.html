@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block content %}
+<h4>Edit Task</h4>
+
+<form method="post" class="card p-3 bg-white">
+
+  <div class="mb-2">
+    <label>Title</label>
+    <input name="title" class="form-control" value="{{ task.title }}" required>
+  </div>
+
+  <div class="mb-2">
+    <label>Task Type</label>
+    <select name="type_id" class="form-select">
+      {% for t in task_types %}
+      <option value="{{ t.id }}" {% if t.id == task.type_id %}selected{% endif %}>
+        {{ t.name }}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="mb-2">
+    <label>Priority</label>
+    <select name="priority" class="form-select">
+      {% for p in ["Low","Normal","High"] %}
+      <option {% if task.priority == p %}selected{% endif %}>{{ p }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="mb-2">
+    <label>Final Deadline</label>
+    <input type="date" name="final_deadline" class="form-control"
+           value="{{ task.final_deadline }}">
+  </div>
+
+  <div class="mb-2">
+    <label>Assign To</label>
+    <select name="assigned_to_id" class="form-select">
+      <option value="">-- Select --</option>
+      {% for u in assignable_users %}
+      <option value="{{ u.id }}" {% if task.assigned_to_id == u.id %}selected{% endif %}>
+        {{ u.full_name or u.username }}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="mb-2">
+    <label>Task Folder (Path or URL)</label>
+    <input name="folder_link" class="form-control"
+           value="{{ task.folder_link or '' }}"
+           placeholder="\\SERVER\\Dept\\Tasks\\Task-001 or https://drive.google.com/...">
+  </div>
+
+  <div class="mb-3">
+    <label>Description</label>
+    <textarea name="description" class="form-control">{{ task.description }}</textarea>
+  </div>
+
+  <button class="btn btn-primary">Update Task</button>
+  <a href="/ui/tasks/{{ task.id }}" class="btn btn-secondary">Cancel</a>
+
+</form>
+{% endblock %}

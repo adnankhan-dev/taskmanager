@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge %}
+
+{% block content %}
+
+<!-- ================= PAGE HEADER ================= -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="mb-0">Dashboard</h4>
+    <small class="text-muted">
+      Overview of tasks, deadlines, and progress
+    </small>
+  </div>
+</div>
+
+<!-- ================= TODAY (FEATURED) ================= -->
+<div class="card shadow-sm p-3 mb-4 border-start border-primary border-3">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h6 class="mb-0 text-primary">Today</h6>
+    <span class="badge bg-primary">
+      {{ dashboard.today.milestones|length + dashboard.today.tasks|length }}
+    </span>
+  </div>
+
+  {% if dashboard.today.milestones or dashboard.today.tasks %}
+    <ul class="list-group list-group-flush">
+      {% for m in dashboard.today.milestones %}
+      <li class="list-group-item px-0">
+        <a href="/ui/tasks/{{ m.task_id }}" class="text-decoration-none">
+          {{ m.title }} ({{ m.status }})
+        </a>
+      </li>
+      {% endfor %}
+      {% for t in dashboard.today.tasks %}
+      <li class="list-group-item px-0">
+        <a href="/ui/tasks/{{ t.id }}" class="text-decoration-none">
+          {{ t.title }}
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="text-muted small mb-0">Nothing due today</p>
+  {% endif %}
+
+  <div class="mt-3 text-end">
+    <a href="/ui/tasks?filter=today" class="btn btn-sm btn-outline-primary">
+      View more ->
+    </a>
+  </div>
+</div>
+
+<!-- ================= KPI CARDS ================= -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <a href="/ui/tasks" class="text-decoration-none text-dark">
+      <div class="stat-card stat-primary card-hover p-3 h-100">
+        <div class="stat-title">Total Tasks</div>
+        <div class="stat-value">{{ total_tasks }}</div>
+        <div class="stat-link">View all</div>
+      </div>
+    </a>
+  </div>
+
+  <div class="col-md-3">
+    <a href="/ui/tasks?assigned_to_id={{ user.id }}" class="text-decoration-none text-dark">
+      <div class="stat-card stat-info card-hover p-3 h-100">
+        <div class="stat-title">My Tasks</div>
+        <div class="stat-value">{{ my_tasks }}</div>
+        <div class="stat-link">Open my list</div>
+      </div>
+    </a>
+  </div>
+
+  <div class="col-md-3">
+    <a href="/ui/tasks?status=Submitted%20for%20Review" class="text-decoration-none text-dark">
+      <div class="stat-card stat-warning card-hover p-3 h-100">
+        <div class="stat-title">Pending Review</div>
+        <div class="stat-value">{{ pending_review }}</div>
+        <div class="stat-link">Needs action</div>
+      </div>
+    </a>
+  </div>
+
+  <div class="col-md-3">
+    <a href="/ui/tasks?filter=overdue" class="text-decoration-none text-dark">
+      <div class="stat-card stat-danger card-hover p-3 h-100">
+        <div class="stat-title">Overdue</div>
+        <div class="stat-value">{{ overdue }}</div>
+        <div class="stat-link">Review overdue</div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- ================= CHART + REVIEW ================= -->
+<div class="row g-3 mb-4">
+  <div class="col-lg-5">
+    <div class="card shadow-sm p-3 h-100">
+      <h6 class="mb-2">Task Status</h6>
+      <div style="height:180px;">
+        <canvas id="taskStatusChart"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="card shadow-sm p-3 h-100">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="mb-0">Pending Review</h6>
+        <span class="badge bg-warning text-dark">
+          {{ dashboard.pending_review|length }}
+        </span>
+      </div>
+      <div class="mb-3">
+        {% if dashboard.pending_review %}
+          <ul class="list-group list-group-flush">
+            {% for t in dashboard.pending_review[:6] %}
+            <li class="list-group-item px-0">
+              <a href="/ui/tasks/{{ t.id }}" class="text-decoration-none">
+                {{ t.title }}
+              </a>
+            </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-muted small mb-0">No tasks awaiting review</p>
+        {% endif %}
+      </div>
+
+      <div class="d-flex flex-wrap gap-2">
+        <a href="/ui/tasks/create" class="btn btn-sm btn-primary">Create Task</a>
+        <a href="/ui/quick-tasks" class="btn btn-sm btn-outline-secondary">Quick Logs</a>
+        <a href="/ui/reports" class="btn btn-sm btn-outline-secondary">Reports</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= UPCOMING / OVERDUE ================= -->
+<div class="row g-3">
+
+  <!-- UPCOMING -->
+  <div class="col-md-6">
+    <div class="card shadow-sm p-3 h-100 border-start border-warning border-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="mb-0 text-warning">Upcoming</h6>
+        <span class="badge bg-warning text-dark">
+          {{ dashboard.upcoming.milestones|length + dashboard.upcoming.tasks|length }}
+        </span>
+      </div>
+
+      {% if dashboard.upcoming.milestones or dashboard.upcoming.tasks %}
+        <ul class="list-group list-group-flush">
+          {% for m in dashboard.upcoming.milestones %}
+          <li class="list-group-item px-0">
+            <a href="/ui/tasks/{{ m.task_id }}" class="text-decoration-none">
+              {{ m.title }} ({{ m.deadline }})
+            </a>
+          </li>
+          {% endfor %}
+          {% for t in dashboard.upcoming.tasks %}
+          <li class="list-group-item px-0">
+            <a href="/ui/tasks/{{ t.id }}" class="text-decoration-none">
+              {{ t.title }} ({{ t.final_deadline }})
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-muted small mb-0">No upcoming items</p>
+      {% endif %}
+
+      <div class="mt-3 text-end">
+        <a href="/ui/tasks?filter=upcoming" class="btn btn-sm btn-outline-warning">
+          View more ->
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERDUE -->
+  <div class="col-md-6">
+    <div class="card shadow-sm p-3 h-100 border-start border-danger border-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="mb-0 text-danger">Overdue</h6>
+        <span class="badge bg-danger">
+          {{ dashboard.overdue.milestones|length + dashboard.overdue.tasks|length }}
+        </span>
+      </div>
+
+      {% if dashboard.overdue.milestones or dashboard.overdue.tasks %}
+        <ul class="list-group list-group-flush">
+          {% for m in dashboard.overdue.milestones %}
+          <li class="list-group-item px-0">
+            <a href="/ui/tasks/{{ m.task_id }}" class="text-decoration-none text-danger">
+              {{ m.title }} ({{ m.deadline }})
+            </a>
+          </li>
+          {% endfor %}
+          {% for t in dashboard.overdue.tasks %}
+          <li class="list-group-item px-0">
+            <a href="/ui/tasks/{{ t.id }}" class="text-decoration-none text-danger">
+              {{ t.title }} ({{ t.final_deadline }})
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-muted small mb-0">No overdue items</p>
+      {% endif %}
+
+      <div class="mt-3 text-end">
+        <a href="/ui/tasks?filter=overdue" class="btn btn-sm btn-outline-danger">
+          View more ->
+        </a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const chartEl = document.getElementById("taskStatusChart");
+
+  if (chartEl && window.Chart) {
+    new Chart(chartEl, {
+      type: "bar",
+      data: {
+        labels: [
+          "Completed",
+          "Pending Review",
+          "Overdue",
+          "In Progress"
+        ],
+        datasets: [{
+          data: [
+            {{ chart_data.completed }},
+            {{ chart_data.pending_review }},
+            {{ chart_data.overdue }},
+            {{ chart_data.in_progress }}
+          ],
+          backgroundColor: [
+            "#198754",
+            "#ffc107",
+            "#dc3545",
+            "#0d6efd"
+          ]
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: { precision: 0 }
+          }
+        }
+      }
+    });
+  }
+</script>
+
+{% endblock %}

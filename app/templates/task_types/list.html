@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h4>Task Types — {{ user.department }}</h4>
+
+<form method="post" action="/ui/task-types/create" class="row g-2 mb-3">
+  <div class="col-md-6">
+    <input class="form-control" name="name" placeholder="New Task Type" required>
+  </div>
+  <div class="col-md-2">
+    <button class="btn btn-success w-100">Add</button>
+  </div>
+</form>
+
+<table class="table table-bordered table-sm bg-white">
+  <thead class="table-light">
+    <tr>
+      <th>Name</th>
+      <th>Status</th>
+      <th width="120">Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for t in types %}
+    <tr>
+      <td>{{ t.name }}</td>
+      <td>
+        {% if t.is_active %}
+          <span class="badge bg-success">Active</span>
+        {% else %}
+          <span class="badge bg-secondary">Inactive</span>
+        {% endif %}
+      </td>
+      <td>
+        <form method="post" action="/ui/task-types/{{ t.id }}/toggle">
+          <button class="btn btn-outline-primary btn-sm">
+            {% if t.is_active %}Deactivate{% else %}Activate{% endif %}
+          </button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}

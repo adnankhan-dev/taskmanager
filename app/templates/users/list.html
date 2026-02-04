@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+<h4>Users</h4>
+
+<a href="/ui/users/create" class="btn btn-success btn-sm mb-3">
+  Create User
+</a>
+
+<table class="table table-bordered table-sm bg-white">
+  <thead>
+    <tr>
+      <th>Username</th>
+      <th>Role</th>
+      <th>Department</th>
+      <th>Manager</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for u in users %}
+    <tr>
+      <td>{{ u.username }}</td>
+      <td>{{ u.role }}</td>
+      <td>{{ u.department }}</td>
+      <td>
+        <form method="post" action="/ui/users/{{ u.id }}/manager" class="d-flex gap-1">
+          <select name="manager_id" class="form-select form-select-sm">
+            <option value="">-- None --</option>
+            {% for m in managers %}
+              {% if m.id != u.id %}
+              <option value="{{ m.id }}" {% if u.manager_id == m.id %}selected{% endif %}>
+                {{ m.username }}
+              </option>
+              {% endif %}
+            {% endfor %}
+          </select>
+          <button class="btn btn-outline-primary btn-sm">Save</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

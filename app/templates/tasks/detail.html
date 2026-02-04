@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge %}
+
+{% block content %}
+<h4>{{ task.title }}</h4>
+<p class="text-muted">{{ task.description }}</p>
+
+<h6>Milestones</h6>
+
+<table class="table table-sm table-bordered bg-white">
+  <thead>
+    <tr>
+      <th>Title</th>
+      <th>Deadline</th>
+      <th>Status</th>
+      <th>Update</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for m in milestones %}
+    <tr>
+      <td>{{ m.title }}</td>
+      <td>{{ m.deadline }}</td>
+      <td>{{ status_badge(m.status) }}</td>
+      <td>
+        <form method="post" action="/ui/tasks/milestones/{{ m.id }}/status">
+          <select name="status" class="form-select form-select-sm">
+            {% for s in ["Pending", "In Progress", "Completed"] %}
+              <option value="{{ s }}" {% if s == m.status %}selected{% endif %}>
+                {{ s }}
+              </option>
+            {% endfor %}
+          </select>
+          <button class="btn btn-sm btn-primary mt-1">Update</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% if user.role == "admin" or task.assigned_to_id == user.id %}
+<a href="/ui/tasks/{{ task.id }}/edit" class="btn btn-outline-secondary btn-sm">
+  Edit Task
+</a>
+{% endif %}
+
+<div class="mb-3">
+
+  {% if task.assigned_to_id == user.id and task.status in ["To Do", "In Progress", "Returned"] %}
+  <form method="post" action="/ui/tasks/{{ task.id }}/submit" class="d-inline">
+    <div class="d-inline-block">
+      <textarea name="submission_remarks"
+                class="form-control form-control-sm mb-2"
+                rows="2"
+                placeholder="Submission remarks (optional)">{{ task.submission_remarks or "" }}</textarea>
+      <button class="btn btn-warning btn-sm">Submit for Review</button>
+    </div>
+  </form>
+  {% endif %}
+
+  {% if task.status == "Submitted for Review" and user.id == task.assigned_to.manager_id %}
+  <form method="post" action="/ui/tasks/{{ task.id }}/approve" class="d-inline">
+    <button class="btn btn-success btn-sm">Approve</button>
+  </form>
+
+  <form method="post" action="/ui/tasks/{{ task.id }}/return" class="d-inline">
+    <button class="btn btn-danger btn-sm">Return</button>
+  </form>
+  {% endif %}
+
+  {% if task.status == "Approved" %}
+  <form method="post" action="/ui/tasks/{{ task.id }}/complete" class="d-inline">
+    <div class="d-inline-block">
+      <textarea name="completion_remarks"
+                class="form-control form-control-sm mb-2"
+                rows="2"
+                placeholder="Completion remarks (optional)">{{ task.completion_remarks or "" }}</textarea>
+      <button class="btn btn-primary btn-sm">Mark Completed</button>
+    </div>
+  </form>
+  {% endif %}
+
+</div>
+
+{% if task.completion_remarks %}
+<div class="alert alert-success mt-3">
+  <strong>Completion Remarks:</strong>
+  <div>{{ task.completion_remarks }}</div>
+</div>
+{% endif %}
+
+{% if task.submission_remarks %}
+<div class="alert alert-warning mt-3">
+  <strong>Submission Remarks:</strong>
+  <div>{{ task.submission_remarks }}</div>
+</div>
+{% endif %}
+
+<h6>Add Milestone</h6>
+<form method="post" action="/ui/tasks/{{ task.id }}/milestones">
+  <div class="row g-2">
+    <div class="col">
+      <input class="form-control" name="title" placeholder="Title" required>
+    </div>
+    <div class="col">
+      <input type="date" class="form-control" name="deadline" required>
+    </div>
+    <div class="col">
+      <button class="btn btn-success">Add</button>
+    </div>
+  </div>
+</form>
+<h6 class="mt-4">Milestones</h6>
+
+<table class="table table-sm table-bordered bg-white">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Title</th>
+      <th>Deadline</th>
+      <th>Status</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for m in milestones %}
+    <tr>
+      <td>{{ m.sequence }}</td>
+
+      <td>
+        <form method="post" action="/ui/tasks/milestones/{{ m.id }}/edit" class="d-flex">
+          <input name="title" value="{{ m.title }}" class="form-control form-control-sm me-1">
+      </td>
+
+      <td>
+          <input type="date" name="deadline"
+                 value="{{ m.deadline }}" class="form-control form-control-sm me-1">
+      </td>
+
+      <td>{{ m.status }}</td>
+
+      <td class="d-flex gap-1">
+          <button class="btn btn-sm btn-success">💾</button>
+        </form>
+
+        <form method="post" action="/ui/tasks/milestones/{{ m.id }}/move">
+          <input type="hidden" name="direction" value="up">
+          <button class="btn btn-sm btn-outline-secondary">↑</button>
+        </form>
+
+        <form method="post" action="/ui/tasks/milestones/{{ m.id }}/move">
+          <input type="hidden" name="direction" value="down">
+          <button class="btn btn-sm btn-outline-secondary">↓</button>
+        </form>
+
+        <form method="post" action="/ui/tasks/milestones/{{ m.id }}/delete"
+              onsubmit="return confirm('Delete milestone?')">
+          <button class="btn btn-sm btn-outline-danger">✕</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}

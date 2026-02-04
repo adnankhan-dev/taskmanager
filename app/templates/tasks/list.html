@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, priority_badge %}
+
+{% block content %}
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-3">
+  <div>
+    <h4 class="mb-0">Tasks</h4>
+    <small class="text-muted">Manage tasks and milestones</small>
+  </div>
+  <a href="/ui/tasks/create" class="btn btn-primary px-3 py-2">
+    + Create Task
+  </a>
+</div>
+
+<!-- ================= FILTERS ================= -->
+<form method="get" class="card shadow-sm p-3 mb-3">
+  <div class="row g-2 align-items-end">
+
+    <!-- STATUS -->
+    <div class="col-md-2">
+      <label class="small">Status</label>
+      <select name="status" class="form-select form-select-sm">
+        <option value="">All</option>
+        {% for s in ["To Do", "In Progress", "Submitted for Review", "Approved", "Completed", "Returned"] %}
+          <option value="{{ s }}" {% if filters.status == s %}selected{% endif %}>
+            {{ s }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- PRIORITY -->
+    <div class="col-md-2">
+      <label class="small">Priority</label>
+      <select name="priority" class="form-select form-select-sm">
+        <option value="">All</option>
+        {% for p in ["Low", "Normal", "High"] %}
+          <option value="{{ p }}" {% if filters.priority == p %}selected{% endif %}>
+            {{ p }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- TASK TYPE -->
+    <div class="col-md-2">
+      <label class="small">Task Type</label>
+      <select name="type_id" class="form-select form-select-sm">
+        <option value="">All</option>
+        {% for t in request.state.task_types %}
+          <option value="{{ t.id }}" {% if filters.type_id == t.id %}selected{% endif %}>
+            {{ t.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- ASSIGNED TO -->
+    <div class="col-md-2">
+      <label class="small">Assigned To</label>
+      <select name="assigned_to_id" class="form-select form-select-sm">
+        <option value="">All</option>
+        {% for u in request.state.users %}
+          <option value="{{ u.id }}" {% if filters.assigned_to_id == u.id %}selected{% endif %}>
+            {{ u.username }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- DATE RANGE -->
+    <div class="col-md-2">
+      <label class="small">From</label>
+      <input type="date" name="from_date"
+             value="{{ filters.from_date }}"
+             class="form-control form-control-sm">
+    </div>
+
+    <div class="col-md-2">
+      <label class="small">To</label>
+      <input type="date" name="to_date"
+             value="{{ filters.to_date }}"
+             class="form-control form-control-sm">
+    </div>
+
+    <div class="col-md-12 text-end mt-2">
+      <button class="btn btn-sm btn-primary">Apply Filters</button>
+      <a href="/ui/tasks" class="btn btn-sm btn-outline-secondary">
+        Reset
+      </a>
+    </div>
+
+  </div>
+</form>
+
+{% if active_filter %}
+<div class="alert alert-info d-flex justify-content-between align-items-center">
+  <span>
+    Showing
+    <strong class="text-capitalize">{{ active_filter }}</strong>
+    tasks
+  </span>
+
+  <a href="/ui/tasks" class="btn btn-sm btn-outline-secondary">
+    Clear filter
+  </a>
+</div>
+{% endif %}
+
+<table class="table table-bordered table-sm bg-white">
+  <thead>
+    <tr>
+      <th>Title</th>
+      <th>Type</th>
+      <th>Priority</th>
+      <th>Status</th>
+      <th>Deadline</th>
+      <th>Folder</th>
+      <th>Milestones</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for task in tasks %}
+    <tr>
+      <td>{{ task.title }}</td>
+      <td>{{ task.type.name if task.type else "-" }}</td>
+      <td>{{ priority_badge(task.priority) }}</td>
+      <td>{{ status_badge(task.status) }}</td>
+      <td>{{ task.final_deadline }}</td>
+
+      <td>
+        {% if task.folder_link %}
+          {% if task.folder_link.startswith("http") %}
+            <a href="{{ task.folder_link }}" target="_blank">Open</a>
+          {% else %}
+            {% set file_path = task.folder_link.replace('\\\\', '/') %}
+            <a href="file:///{{ file_path }}" target="_blank">
+              {{ task.folder_link }}
+            </a>
+          {% endif %}
+        {% else %}
+          -
+        {% endif %}
+      </td>
+
+      <td class="text-center">
+        {% if task.milestones %}
+          <button class="btn btn-sm btn-outline-secondary"
+                  type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#ms-{{ task.id }}"
+                  aria-expanded="false"
+                  aria-controls="ms-{{ task.id }}">
+            +
+          </button>
+        {% else %}
+          -
+        {% endif %}
+      </td>
+
+      <td>
+        <a href="/ui/tasks/{{ task.id }}" class="btn btn-sm btn-outline-primary">
+          View
+        </a>
+      </td>
+    </tr>
+    {% if task.milestones %}
+    <tr>
+      <td colspan="8" class="p-0 border-0">
+        <div class="collapse" id="ms-{{ task.id }}">
+          <div class="p-2 bg-light">
+            <strong class="small text-muted">Milestones</strong>
+            <table class="table table-sm mb-0 mt-1">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Title</th>
+                  <th>Status</th>
+                  <th>Deadline</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for m in task.milestones %}
+                <tr>
+                  <td>{{ m.sequence }}</td>
+                  <td>{{ m.title }}</td>
+                  <td>{{ status_badge(m.status) }}</td>
+                  <td>{{ m.deadline }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </td>
+    </tr>
+    {% endif %}
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
