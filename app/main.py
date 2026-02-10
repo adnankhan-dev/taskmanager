@@ -16,12 +16,15 @@ from app.routes import report_pages
 from app.routes import user_pages
 from app.routes import task_type_pages
 from app.routes import quick_tasks
+from app.routes import admin_pages
 
 # Models
 from app.models.user import User
 from app.models.task_type import TaskType
 from app.models.privilege import Privilege
 from app.models.quick_task import QuickTask
+from app.models.app_setting import AppSetting
+from app.utils.theme import BUTTON_COLOR_DEFAULTS, sanitize_hex_color
 
 # Security
 from app.utils.security import hash_password
@@ -101,6 +104,26 @@ async def inject_report_filters(request: Request, call_next):
             .filter(User.is_active == True)
             .all()
         )
+        theme_setting = (
+            db.query(AppSetting)
+            .filter(AppSetting.key == "ui_theme")
+            .first()
+        )
+        request.state.ui_theme = (
+            theme_setting.value
+            if theme_setting and theme_setting.value
+            else "classic"
+        )
+        button_settings = (
+            db.query(AppSetting)
+            .filter(AppSetting.key.in_(list(BUTTON_COLOR_DEFAULTS.keys())))
+            .all()
+        )
+        button_map = {item.key: item.value for item in button_settings}
+        request.state.ui_button_colors = {
+            key: sanitize_hex_color(button_map.get(key), default)
+            for key, default in BUTTON_COLOR_DEFAULTS.items()
+        }
 
         response = await call_next(request)
     finally:
@@ -120,6 +143,7 @@ app.include_router(user_pages.router)
 app.include_router(task_type_pages.router)
 app.include_router(dashboard.router)
 app.include_router(quick_tasks.router)
+app.include_router(admin_pages.router)
 
 
 # =====================================================
@@ -163,3 +187,12 @@ with Session(engine) as db:
         for code, desc in default_privs:
             db.add(Privilege(code=code, description=desc))
         db.commit()
+
+    if not db.query(AppSetting).filter(AppSetting.key == "ui_theme").first():
+        db.add(AppSetting(key="ui_theme", value="classic"))
+        db.commit()
+
+    for key, default in BUTTON_COLOR_DEFAULTS.items():
+        if not db.query(AppSetting).filter(AppSetting.key == key).first():
+            db.add(AppSetting(key=key, value=default))
+    db.commit()

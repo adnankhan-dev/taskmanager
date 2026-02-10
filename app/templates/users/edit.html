@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block content %}
+<h4>Edit User</h4>
+
+<form method="post" class="card p-3 bg-white">
+  <div class="mb-2">
+    <label>Username</label>
+    <input name="username" class="form-control" value="{{ target_user.username }}" required>
+  </div>
+
+  <div class="mb-2">
+    <label>Password (leave blank to keep current)</label>
+    <input name="password" type="password" class="form-control">
+  </div>
+
+  <div class="mb-2">
+    <label>Role</label>
+    <input name="role" class="form-control" value="{{ target_user.role }}">
+  </div>
+
+  <div class="mb-2">
+    <label>Department</label>
+    <input name="department" class="form-control" value="{{ target_user.department or '' }}">
+  </div>
+
+  <div class="mb-2">
+    <label>Manager (Reports To)</label>
+    <select name="manager_id" class="form-select">
+      <option value="">-- None --</option>
+      {% for m in managers %}
+      <option value="{{ m.id }}" {% if target_user.manager_id == m.id %}selected{% endif %}>
+        {{ m.username }}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="form-check mb-3">
+    <input class="form-check-input" type="checkbox" name="is_active"
+           {% if target_user.is_active %}checked{% endif %}>
+    <label class="form-check-label">Active User</label>
+  </div>
+
+  <div class="mb-3">
+    <label>Privileges</label>
+    {% if privileges %}
+      {% for p in privileges %}
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox"
+               name="privilege_ids" value="{{ p.id }}"
+               {% if p.id in selected_privilege_ids %}checked{% endif %}>
+        <label class="form-check-label">{{ p.code }}</label>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p class="small text-muted mb-0">No privileges available.</p>
+    {% endif %}
+  </div>
+
+  <div class="d-flex gap-2">
+    <button class="btn btn-primary">Update User</button>
+    <a href="/ui/users" class="btn btn-secondary">Cancel</a>
+  </div>
+</form>
+{% endblock %}

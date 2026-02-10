@@ -66,11 +66,19 @@ def create_user_submit(
     if not user or user.role != "admin":
         return RedirectResponse("/dashboard", status_code=303)
 
+    username_val = username.strip()
+    if not username_val:
+        return RedirectResponse("/ui/users/create", status_code=303)
+
+    existing = db.query(User).filter(User.username == username_val).first()
+    if existing:
+        return RedirectResponse("/ui/users/create", status_code=303)
+
     new_user = User(
-        username=username,
+        username=username_val,
         password_hash=hash_password(password),
-        role=role,
-        department=department,
+        role=role.strip(),
+        department=department.strip() or None,
         manager_id=manager_id
     )
 
@@ -84,6 +92,97 @@ def create_user_submit(
     db.add(new_user)
     db.commit()
 
+    return RedirectResponse("/ui/users", status_code=303)
+
+
+@router.get("/{user_id}/edit")
+def edit_user_form(
+    user_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    if not user or user.role != "admin":
+        return RedirectResponse("/dashboard", status_code=303)
+
+    target = db.get(User, user_id)
+    if not target:
+        return RedirectResponse("/ui/users", status_code=303)
+
+    privileges = db.query(Privilege).order_by(Privilege.code).all()
+    managers = (
+        db.query(User)
+        .filter(User.id != user_id)
+        .order_by(User.username)
+        .all()
+    )
+    selected_privilege_ids = {p.id for p in target.privileges}
+
+    return templates.TemplateResponse(
+        "users/edit.html",
+        {
+            "request": request,
+            "target_user": target,
+            "privileges": privileges,
+            "selected_privilege_ids": selected_privilege_ids,
+            "managers": managers,
+            "user": user
+        }
+    )
+
+
+@router.post("/{user_id}/edit")
+def edit_user_submit(
+    user_id: int,
+    username: str = Form(...),
+    role: str = Form(...),
+    department: str | None = Form(None),
+    manager_id: int | None = Form(None),
+    password: str | None = Form(None),
+    is_active: str | None = Form(None),
+    privilege_ids: list[int] = Form([]),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    if not user or user.role != "admin":
+        return RedirectResponse("/dashboard", status_code=303)
+
+    target = db.get(User, user_id)
+    if not target:
+        return RedirectResponse("/ui/users", status_code=303)
+
+    username_val = username.strip()
+    if not username_val:
+        return RedirectResponse(f"/ui/users/{user_id}/edit", status_code=303)
+
+    duplicate = (
+        db.query(User)
+        .filter(User.username == username_val, User.id != user_id)
+        .first()
+    )
+    if duplicate:
+        return RedirectResponse(f"/ui/users/{user_id}/edit", status_code=303)
+
+    target.username = username_val
+    target.role = role.strip()
+    target.department = (department or "").strip() or None
+    target.manager_id = None if manager_id == user_id else manager_id
+    target.is_active = bool(is_active)
+
+    password_val = (password or "").strip()
+    if password_val:
+        target.password_hash = hash_password(password_val)
+
+    if privilege_ids:
+        target.privileges = (
+            db.query(Privilege)
+            .filter(Privilege.id.in_(privilege_ids))
+            .all()
+        )
+    else:
+        target.privileges = []
+
+    db.commit()
     return RedirectResponse("/ui/users", status_code=303)
 
 

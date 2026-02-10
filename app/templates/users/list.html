@@ -1,10 +1,14 @@
 {% extends "base.html" %}
 {% block content %}
-<h4>Users</h4>
-
-<a href="/ui/users/create" class="btn btn-success btn-sm mb-3">
-  Create User
-</a>
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+  <div>
+    <h4 class="mb-0">Users</h4>
+    <p class="text-muted mb-0 small">Manage user accounts, hierarchy, and privileges.</p>
+  </div>
+  <a href="/ui/users/create" class="btn btn-primary btn-sm px-3">
+    + Create User
+  </a>
+</div>
 
 <table class="table table-bordered table-sm bg-white">
   <thead>
@@ -12,7 +16,9 @@
       <th>Username</th>
       <th>Role</th>
       <th>Department</th>
+      <th>Privileges</th>
       <th>Manager</th>
+      <th>Actions</th>
     </tr>
   </thead>
   <tbody>
@@ -21,6 +27,15 @@
       <td>{{ u.username }}</td>
       <td>{{ u.role }}</td>
       <td>{{ u.department }}</td>
+      <td>
+        {% if u.privileges %}
+          {% for p in u.privileges %}
+          <span class="badge bg-secondary">{{ p.code }}</span>
+          {% endfor %}
+        {% else %}
+          <span class="text-muted">None</span>
+        {% endif %}
+      </td>
       <td>
         <form method="post" action="/ui/users/{{ u.id }}/manager" class="d-flex gap-1">
           <select name="manager_id" class="form-select form-select-sm">
@@ -35,6 +50,9 @@
           </select>
           <button class="btn btn-outline-primary btn-sm">Save</button>
         </form>
+      </td>
+      <td>
+        <a href="/ui/users/{{ u.id }}/edit" class="btn btn-sm btn-primary">Edit</a>
       </td>
     </tr>
     {% endfor %}

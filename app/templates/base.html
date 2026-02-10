@@ -12,13 +12,63 @@
   <!-- Chart.js (for dashboard graphs – will be used later) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+  {% set active_theme = request.state.ui_theme if request and request.state.ui_theme else 'classic' %}
+  {% set btn_colors = request.state.ui_button_colors if request and request.state.ui_button_colors else {} %}
   <style>
+    :root {
+      --tm-body-bg: #f4f6f9;
+      --tm-nav-start: #0b1b2b;
+      --tm-nav-end: #152c48;
+      --tm-footer-start: #0b1b2b;
+      --tm-footer-end: #152c48;
+      --tm-nav-text: #dbe7ff;
+      --tm-nav-active-bg: #ffffff;
+      --tm-nav-active-text: #0b1b2b;
+      --tm-page-text: #212529;
+      --tm-surface-bg: #ffffff;
+      --tm-surface-soft-bg: #f8f9fa;
+      --tm-border: #dee2e6;
+      --tm-muted: #6c757d;
+      --tm-dropdown-bg: #ffffff;
+      --tm-dropdown-text: #212529;
+      --tm-dropdown-hover-bg: #f1f3f5;
+      --tm-btn-primary: {{ btn_colors.get('ui_btn_primary', '#0d6efd') }};
+      --tm-btn-secondary: {{ btn_colors.get('ui_btn_secondary', '#6c757d') }};
+      --tm-btn-success: {{ btn_colors.get('ui_btn_success', '#198754') }};
+      --tm-btn-warning: {{ btn_colors.get('ui_btn_warning', '#ffc107') }};
+      --tm-btn-danger: {{ btn_colors.get('ui_btn_danger', '#dc3545') }};
+    }
+    {% if active_theme == "ocean" %}
+    :root {
+      --tm-body-bg: #eef6f8;
+      --tm-nav-start: #0b2b34;
+      --tm-nav-end: #1a4b56;
+      --tm-footer-start: #0b2b34;
+      --tm-footer-end: #1a4b56;
+      --tm-nav-text: #d8f0f4;
+      --tm-nav-active-bg: #e8fbff;
+      --tm-nav-active-text: #0b2b34;
+    }
+    {% elif active_theme == "emerald" %}
+    :root {
+      --tm-body-bg: #f2f8f3;
+      --tm-nav-start: #153a2f;
+      --tm-nav-end: #235b4a;
+      --tm-footer-start: #153a2f;
+      --tm-footer-end: #235b4a;
+      --tm-nav-text: #dbf3e6;
+      --tm-nav-active-bg: #eefcf3;
+      --tm-nav-active-text: #153a2f;
+    }
+    {% endif %}
+
     html, body {
       height: 100%;
     }
     body {
       font-size: 0.95rem;
-      background-color: #f4f6f9;
+      background-color: var(--tm-body-bg);
+      color: var(--tm-page-text);
       min-height: 100%;
       display: flex;
       flex-direction: column;
@@ -39,6 +89,8 @@
     .card {
       border: none;
       border-radius: 0.75rem;
+      background-color: var(--tm-surface-bg);
+      color: var(--tm-page-text);
     }
     .card-hover {
       transition: transform 0.15s ease, box-shadow 0.15s ease;
@@ -84,13 +136,13 @@
     .stat-warning { background: linear-gradient(135deg, #b7791f, #f6ad55); }
     .stat-danger { background: linear-gradient(135deg, #dc3545, #8b1d28); }
     .navbar-modern {
-      background: linear-gradient(90deg, #0b1b2b, #152c48);
+      background: linear-gradient(90deg, var(--tm-nav-start), var(--tm-nav-end));
       border-bottom: 1px solid rgba(255,255,255,0.08);
     }
     .footer-modern {
-      background: linear-gradient(90deg, #0b1b2b, #152c48);
+      background: linear-gradient(90deg, var(--tm-footer-start), var(--tm-footer-end));
       border-top: 1px solid rgba(255,255,255,0.08);
-      color: #dbe7ff;
+      color: var(--tm-nav-text);
     }
     .footer-modern .footer-text {
       font-size: 0.78rem;
@@ -100,7 +152,7 @@
       font-size: 0.78rem;
     }
     .footer-modern a {
-      color: #dbe7ff;
+      color: var(--tm-nav-text);
       text-decoration: none;
     }
     .footer-modern a:hover {
@@ -110,7 +162,7 @@
     .nav-pill {
       padding: 0.35rem 0.85rem;
       border-radius: 999px;
-      color: #dbe7ff !important;
+      color: var(--tm-nav-text) !important;
       transition: all 0.15s ease;
     }
     .nav-pill:hover {
@@ -118,13 +170,161 @@
       color: #fff !important;
     }
     .nav-pill.active {
-      background: #ffffff;
-      color: #0b1b2b !important;
+      background: var(--tm-nav-active-bg);
+      color: var(--tm-nav-active-text) !important;
       font-weight: 600;
     }
     .nav-cta {
       border-radius: 999px;
       padding: 0.35rem 0.9rem;
+    }
+
+    .table {
+      --bs-table-bg: var(--tm-surface-bg);
+      --bs-table-color: var(--tm-page-text);
+      --bs-table-border-color: var(--tm-border);
+    }
+    .table-light {
+      --bs-table-bg: var(--tm-surface-soft-bg);
+      --bs-table-color: var(--tm-page-text);
+      --bs-table-border-color: var(--tm-border);
+    }
+    .bg-white {
+      background-color: var(--tm-surface-bg) !important;
+      color: var(--tm-page-text) !important;
+    }
+    .text-muted {
+      color: var(--tm-muted) !important;
+    }
+    .form-control,
+    .form-select {
+      background-color: var(--tm-surface-bg);
+      border-color: var(--tm-border);
+      color: var(--tm-page-text);
+    }
+    .form-control::placeholder {
+      color: var(--tm-muted);
+    }
+    .form-control:focus,
+    .form-select:focus {
+      background-color: var(--tm-surface-bg);
+      color: var(--tm-page-text);
+    }
+    .dropdown-menu {
+      background-color: var(--tm-dropdown-bg);
+      color: var(--tm-dropdown-text);
+      border-color: var(--tm-border);
+    }
+    .dropdown-item {
+      color: var(--tm-dropdown-text);
+    }
+    .dropdown-item:hover,
+    .dropdown-item:focus {
+      background-color: var(--tm-dropdown-hover-bg);
+      color: var(--tm-dropdown-text);
+    }
+    .dropdown-divider {
+      border-color: var(--tm-border);
+    }
+
+    body[data-mode="dark"] {
+      --tm-body-bg: #0f172a;
+      --tm-nav-start: #060b16;
+      --tm-nav-end: #111827;
+      --tm-footer-start: #060b16;
+      --tm-footer-end: #111827;
+      --tm-nav-text: #dbe3f0;
+      --tm-nav-active-bg: #1f2937;
+      --tm-nav-active-text: #f8fafc;
+      --tm-page-text: #e5e7eb;
+      --tm-surface-bg: #111827;
+      --tm-surface-soft-bg: #1f2937;
+      --tm-border: #334155;
+      --tm-muted: #94a3b8;
+      --tm-dropdown-bg: #0f172a;
+      --tm-dropdown-text: #e5e7eb;
+      --tm-dropdown-hover-bg: #1e293b;
+    }
+
+    .btn-primary {
+      background-color: var(--tm-btn-primary) !important;
+      border-color: var(--tm-btn-primary) !important;
+      color: #fff !important;
+    }
+    .btn-secondary {
+      background-color: var(--tm-btn-secondary) !important;
+      border-color: var(--tm-btn-secondary) !important;
+      color: #fff !important;
+    }
+    .btn-success {
+      background-color: var(--tm-btn-success) !important;
+      border-color: var(--tm-btn-success) !important;
+      color: #fff !important;
+    }
+    .btn-warning {
+      background-color: var(--tm-btn-warning) !important;
+      border-color: var(--tm-btn-warning) !important;
+      color: #212529 !important;
+    }
+    .btn-danger {
+      background-color: var(--tm-btn-danger) !important;
+      border-color: var(--tm-btn-danger) !important;
+      color: #fff !important;
+    }
+
+    .btn-outline-primary {
+      color: var(--tm-btn-primary) !important;
+      border-color: var(--tm-btn-primary) !important;
+    }
+    .btn-outline-secondary {
+      color: var(--tm-btn-secondary) !important;
+      border-color: var(--tm-btn-secondary) !important;
+    }
+    .btn-outline-success {
+      color: var(--tm-btn-success) !important;
+      border-color: var(--tm-btn-success) !important;
+    }
+    .btn-outline-warning {
+      color: var(--tm-btn-warning) !important;
+      border-color: var(--tm-btn-warning) !important;
+    }
+    .btn-outline-danger {
+      color: var(--tm-btn-danger) !important;
+      border-color: var(--tm-btn-danger) !important;
+    }
+
+    .btn-outline-primary:hover, .btn-outline-primary:focus, .btn-outline-primary:active {
+      background-color: var(--tm-btn-primary) !important;
+      border-color: var(--tm-btn-primary) !important;
+      color: #fff !important;
+    }
+    .btn-outline-secondary:hover, .btn-outline-secondary:focus, .btn-outline-secondary:active {
+      background-color: var(--tm-btn-secondary) !important;
+      border-color: var(--tm-btn-secondary) !important;
+      color: #fff !important;
+    }
+    .btn-outline-success:hover, .btn-outline-success:focus, .btn-outline-success:active {
+      background-color: var(--tm-btn-success) !important;
+      border-color: var(--tm-btn-success) !important;
+      color: #fff !important;
+    }
+    .btn-outline-warning:hover, .btn-outline-warning:focus, .btn-outline-warning:active {
+      background-color: var(--tm-btn-warning) !important;
+      border-color: var(--tm-btn-warning) !important;
+      color: #212529 !important;
+    }
+    .btn-outline-danger:hover, .btn-outline-danger:focus, .btn-outline-danger:active {
+      background-color: var(--tm-btn-danger) !important;
+      border-color: var(--tm-btn-danger) !important;
+      color: #fff !important;
+    }
+
+    .btn-primary:hover, .btn-primary:focus, .btn-primary:active,
+    .btn-secondary:hover, .btn-secondary:focus, .btn-secondary:active,
+    .btn-success:hover, .btn-success:focus, .btn-success:active,
+    .btn-warning:hover, .btn-warning:focus, .btn-warning:active,
+    .btn-danger:hover, .btn-danger:focus, .btn-danger:active {
+      filter: brightness(0.92);
     }
 
     .card-shadow {
@@ -195,7 +395,7 @@
 
         {% if user and user.role == "admin" %}
         <li class="nav-item dropdown">
-          <a class="nav-link nav-pill dropdown-toggle {% if request.url.path.startswith('/ui/task-types') or request.url.path.startswith('/ui/users') %}active{% endif %}"
+          <a class="nav-link nav-pill dropdown-toggle {% if request.url.path.startswith('/ui/task-types') or request.url.path.startswith('/ui/users') or request.url.path.startswith('/ui/admin') %}active{% endif %}"
              href="#"
              role="button"
              data-bs-toggle="dropdown"
@@ -213,6 +413,12 @@
               <a class="dropdown-item {% if request.url.path.startswith('/ui/users') %}active{% endif %}"
                  href="/ui/users">
                 Users
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item {% if request.url.path.startswith('/ui/admin/theme') %}active{% endif %}"
+                 href="/ui/admin/theme">
+                Theme
               </a>
             </li>
           </ul>
@@ -238,6 +444,12 @@
             {{ user.username }}
           </a>
           <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+              <button type="button" class="dropdown-item" id="theme-mode-toggle">
+                <span id="theme-mode-toggle-text">Switch to Dark Mode</span>
+              </button>
+            </li>
+            <li><hr class="dropdown-divider"></li>
             <li>
               <a class="dropdown-item" href="/logout">Logout</a>
             </li>
@@ -290,6 +502,44 @@
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  (function () {
+    const STORAGE_KEY = "ui_mode";
+    const body = document.body;
+
+    function applyMode(mode) {
+      body.setAttribute("data-mode", mode);
+      const label = document.getElementById("theme-mode-toggle-text");
+      if (label) {
+        label.textContent = mode === "dark"
+          ? "Switch to Light Mode"
+          : "Switch to Dark Mode";
+      }
+    }
+
+    function getInitialMode() {
+      const saved = window.localStorage.getItem(STORAGE_KEY);
+      if (saved === "dark" || saved === "light") {
+        return saved;
+      }
+      return "light";
+    }
+
+    applyMode(getInitialMode());
+
+    const toggleBtn = document.getElementById("theme-mode-toggle");
+    if (!toggleBtn) {
+      return;
+    }
+
+    toggleBtn.addEventListener("click", function () {
+      const current = body.getAttribute("data-mode") === "dark" ? "dark" : "light";
+      const next = current === "dark" ? "light" : "dark";
+      window.localStorage.setItem(STORAGE_KEY, next);
+      applyMode(next);
+    });
+  })();
+</script>
 
 </body>
 </html>
