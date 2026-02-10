@@ -248,6 +248,7 @@ def task_detail(
     task = db.get(Task, task_id)
     if not task:
         return RedirectResponse("/ui/tasks", status_code=303)
+    can_edit = can_edit_task(user, task)
 
     milestones = (
         db.query(TaskMilestone)
@@ -262,7 +263,8 @@ def task_detail(
             "request": request,
             "task": task,
             "milestones": milestones,
-            "user": user
+            "user": user,
+            "can_edit": can_edit
         }
     )
 
@@ -332,8 +334,13 @@ def add_milestone_submit(
     user: User = Depends(get_current_user)
 ):
     task = db.get(Task, task_id)
-    if task:
-        add_milestone(db, task, title, deadline)
+    if not task:
+        return RedirectResponse("/ui/tasks", status_code=303)
+
+    if not can_edit_task(user, task):
+        return RedirectResponse("/dashboard", status_code=403)
+
+    add_milestone(db, task, title, deadline)
 
     return RedirectResponse(f"/ui/tasks/{task_id}", status_code=303)
 
@@ -346,8 +353,14 @@ def update_milestone_status_submit(
     user: User = Depends(get_current_user)
 ):
     milestone = db.get(TaskMilestone, milestone_id)
-    if milestone:
-        update_milestone_status(db, milestone, status)
+    if not milestone:
+        return RedirectResponse("/ui/tasks", status_code=303)
+
+    task = db.get(Task, milestone.task_id)
+    if not task or not can_edit_task(user, task):
+        return RedirectResponse("/dashboard", status_code=403)
+
+    update_milestone_status(db, milestone, status)
 
     return RedirectResponse(f"/ui/tasks/{milestone.task_id}", status_code=303)
 
@@ -453,6 +466,10 @@ def edit_milestone_submit(
     if not milestone:
         return RedirectResponse("/ui/tasks", status_code=303)
 
+    task = db.get(Task, milestone.task_id)
+    if not task or not can_edit_task(user, task):
+        return RedirectResponse("/dashboard", status_code=403)
+
     update_milestone(db, milestone, title, deadline)
     return RedirectResponse(f"/ui/tasks/{milestone.task_id}", status_code=303)
 
@@ -467,6 +484,10 @@ def delete_milestone_submit(
     if not milestone:
         return RedirectResponse("/ui/tasks", status_code=303)
 
+    task = db.get(Task, milestone.task_id)
+    if not task or not can_edit_task(user, task):
+        return RedirectResponse("/dashboard", status_code=403)
+
     task_id = milestone.task_id
     delete_milestone(db, milestone)
     return RedirectResponse(f"/ui/tasks/{task_id}", status_code=303)
@@ -480,7 +501,13 @@ def move_milestone_submit(
     user: User = Depends(get_current_user)
 ):
     milestone = db.get(TaskMilestone, milestone_id)
-    if milestone:
-        move_milestone(db, milestone, direction)
+    if not milestone:
+        return RedirectResponse("/ui/tasks", status_code=303)
+
+    task = db.get(Task, milestone.task_id)
+    if not task or not can_edit_task(user, task):
+        return RedirectResponse("/dashboard", status_code=403)
+
+    move_milestone(db, milestone, direction)
 
     return RedirectResponse(f"/ui/tasks/{milestone.task_id}", status_code=303)

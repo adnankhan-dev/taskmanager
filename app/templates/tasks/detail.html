@@ -2,8 +2,19 @@
 {% from "_macros.html" import status_badge %}
 
 {% block content %}
-<h4>{{ task.title }}</h4>
-<p class="text-muted">{{ task.description }}</p>
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+  <div>
+    <h4 class="mb-1">{{ task.title }}</h4>
+    <p class="text-muted mb-0">{{ task.description }}</p>
+  </div>
+  {% if can_edit %}
+  <form method="get" action="/ui/tasks/{{ task.id }}/edit" class="m-0">
+    <button type="submit" class="btn btn-primary btn-sm">
+      Edit Task
+    </button>
+  </form>
+  {% endif %}
+</div>
 
 <h6>Milestones</h6>
 
@@ -23,6 +34,7 @@
       <td>{{ m.deadline }}</td>
       <td>{{ status_badge(m.status) }}</td>
       <td>
+        {% if can_edit %}
         <form method="post" action="/ui/tasks/milestones/{{ m.id }}/status">
           <select name="status" class="form-select form-select-sm">
             {% for s in ["Pending", "In Progress", "Completed"] %}
@@ -33,16 +45,14 @@
           </select>
           <button class="btn btn-sm btn-primary mt-1">Update</button>
         </form>
+        {% else %}
+        <span class="text-muted small">Locked</span>
+        {% endif %}
       </td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
-{% if user.role == "admin" or task.assigned_to_id == user.id %}
-<a href="/ui/tasks/{{ task.id }}/edit" class="btn btn-outline-secondary btn-sm">
-  Edit Task
-</a>
-{% endif %}
 
 <div class="mb-3">
 
@@ -96,6 +106,7 @@
 </div>
 {% endif %}
 
+{% if can_edit %}
 <h6>Add Milestone</h6>
 <form method="post" action="/ui/tasks/{{ task.id }}/milestones">
   <div class="row g-2">
@@ -162,5 +173,6 @@
     {% endfor %}
   </tbody>
 </table>
+{% endif %}
 
 {% endblock %}
