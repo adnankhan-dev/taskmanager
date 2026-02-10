@@ -24,16 +24,25 @@ def list_task_types(
 
     types = (
         db.query(TaskType)
-        .filter(TaskType.department == user.department)
-        .order_by(TaskType.name)
+        .order_by(TaskType.department, TaskType.name)
         .all()
     )
+
+    departments = (
+        db.query(User.department)
+        .filter(User.department.isnot(None))
+        .distinct()
+        .order_by(User.department)
+        .all()
+    )
+    department_options = [row[0] for row in departments if row[0]]
 
     return templates.TemplateResponse(
         "task_types/list.html",
         {
             "request": request,
             "types": types,
+            "departments": department_options,
             "user": user
         }
     )
@@ -45,15 +54,20 @@ def list_task_types(
 @router.post("/create")
 def create_task_type(
     name: str = Form(...),
+    department: str = Form(...),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user)
 ):
     if not user or user.role != "admin":
         return RedirectResponse("/dashboard", status_code=303)
 
+    department_val = department.strip()
+    if not department_val:
+        return RedirectResponse("/ui/task-types", status_code=303)
+
     db.add(TaskType(
         name=name.strip(),
-        department=user.department,
+        department=department_val,
         is_active=True
     ))
     db.commit()

@@ -1,11 +1,20 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h4>Task Types — {{ user.department }}</h4>
+<h4>Task Types</h4>
 
 <form method="post" action="/ui/task-types/create" class="row g-2 mb-3">
   <div class="col-md-6">
     <input class="form-control" name="name" placeholder="New Task Type" required>
+  </div>
+  <div class="col-md-4">
+    <input class="form-control" name="department" list="department-options"
+           placeholder="Department" required>
+    <datalist id="department-options">
+      {% for d in departments %}
+        <option value="{{ d }}"></option>
+      {% endfor %}
+    </datalist>
   </div>
   <div class="col-md-2">
     <button class="btn btn-success w-100">Add</button>
@@ -16,6 +25,7 @@
   <thead class="table-light">
     <tr>
       <th>Name</th>
+      <th>Department</th>
       <th>Status</th>
       <th width="120">Action</th>
     </tr>
@@ -24,6 +34,7 @@
     {% for t in types %}
     <tr>
       <td>{{ t.name }}</td>
+      <td>{{ t.department }}</td>
       <td>
         {% if t.is_active %}
           <span class="badge bg-success">Active</span>
